@@ -19,77 +19,67 @@ class Project:
 		pass
 	def apply(self):
 		print("Will apply projects"+self.name)
-		#input=UserInput()
-		
-
-class UserInput(QWidget):
 	
-
-	def __init__(self,Title):
-		super().__init__()
-		self.initUI(Title)
-		
-	def initUI(self,Title):
-		self.setFixedSize(400,400)
-		self.setWindowTitle(Title)
-		vlayout=QVBoxLayout()
-		hlayout=QHBoxLayout()
-		okbutton=QPushButton("OK")
-		cancelbutton=QPushButton("Cancel")
-		lineedit=QLineEdit("ProjectName")
-		hlayout.addWidget(cancelbutton)
-		hlayout.addWidget(okbutton)
-		bottomwidget=QWidget()
-		bottomwidget.setLayout(hlayout)
-		vlayout.addWidget(bottomwidget)
-		vlayout.addWidget(lineedit)
-		self.setLayout(vlayout)
-		self.hide()
-		
 
 class MainWindow(QMainWindow):
-	
-	
-    
+
+	mainwidget=None
+	projlist=list()
 	def __init__(self,projectlist):
 		super().__init__()
 		self.projlist=projectlist
-		self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-		self.initUI()
-		icon=QIcon()
-		icon.addPixmap(QPixmap("applications-development.png")) #TODO marche pas
-		self.setWindowIcon(icon)
+		#self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+		self.initUI()		
+		self.setWindowIcon(QIcon.fromTheme("applications-development"))
         
 	def initUI(self):     
-		userinput=UserInput("Merde")
 		exitAction = QAction(QIcon('exit.png'), '&Exit', self)        
 		exitAction.setShortcut('Ctrl+Q')
 		exitAction.setStatusTip('Exit application')
 		exitAction.triggered.connect(qApp.quit)
-		self.statusBar()
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
-		self.showMaximized()
+		self.statusBar()
 		self.setWindowTitle('New Project')    
-		layout=QVBoxLayout()
-		layout.addStretch(1)
+		self.showMaximized()
+		
+		self.GoToMainView()
+	
+	def SwitchWidget(self):
+		vlayout=QVBoxLayout()
+		hlayout=QHBoxLayout()
+		okbutton=QPushButton(QIcon.fromTheme("dialog-ok-apply"),"Ok")
+		cancelbutton=QPushButton(QIcon.fromTheme("dialog-cancel"),"Cancel")
+		cancelbutton.clicked.connect(self.GoToMainView)
+		projectnameedit=QLineEdit("ProjectName")
+		projectnameedit.setFocus()
+		hlayout.addWidget(cancelbutton)
+		hlayout.addWidget(okbutton)
+		bottomwidget=QWidget()
+		bottomwidget.setLayout(hlayout)
+		vlayout.addWidget(projectnameedit)
+		vlayout.addWidget(bottomwidget)
+		widget=QWidget()
+		widget.setLayout(vlayout)
+		self.setCentralWidget(widget)
+		
+	def GoToMainView(self):
+		mainlayout=QVBoxLayout()
+		mainlayout.addStretch(1)
 		for p in self.projlist :
 			icon=QIcon()
 			icon.addPixmap(QPixmap(p.icon))
-			button=QPushButton(icon,p.name)
+			button=QPushButton(icon,p.name,self)
 			button.setToolTip(p.comment)
 			button.clicked.connect(p.apply)
-			button.clicked.connect(userinput.show)
-			button.clicked.connect(self.hide)
+			button.clicked.connect(self.SwitchWidget)
 			button.setAutoDefault(True)
-			layout.addWidget(button)
-		layout.addWidget(button)
-		centralwideget=QWidget()
-		centralwideget.setLayout(layout)
-		self.setCentralWidget(centralwideget)
-	#def PromptUser(self):
-		#windowtitle=""
+			mainlayout.addWidget(button)
+		widget=QWidget()
+		widget.setLayout(mainlayout)
+		self.setCentralWidget(widget)
+		
 		
 
 def ReadATemplateDesktopFile(file):
