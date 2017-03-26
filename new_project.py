@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import sys, os
+import sys, os,subprocess
 from os import listdir
 from os.path import isfile, join, isdir
 import re
-
+import shutil
 from PyQt5.QtCore import(QSize, pyqtSignal)
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QVBoxLayout,QPushButton,QWidget, QHBoxLayout,QAction,qApp, QLineEdit,QFileDialog,QStackedWidget)
 from PyQt5.QtGui import (QIcon ,QPixmap)
@@ -30,7 +30,6 @@ class Project(QPushButton):
 	projectClicked=pyqtSignal(object)
 		
 	def ProjectClickedEvent(self):
-		print("Project is clicked "+self.m_name)
 		self.projectClicked.emit(self)
 	
 
@@ -74,6 +73,7 @@ class MainWindow(QMainWindow):
 		vlayout=QVBoxLayout()
 		hlayout=QHBoxLayout()
 		okbutton=QPushButton(QIcon.fromTheme("dialog-ok-apply"),"Ok")
+		okbutton.clicked.connect(self.CreateNewProject)
 		cancelbutton=QPushButton(QIcon.fromTheme("dialog-cancel"),"Cancel")
 		cancelbutton.clicked.connect(self.GoToMainView)
 		self.wfolderlineedit=QLineEdit("/home/max/")	#TODO use default path value form within templates
@@ -83,13 +83,13 @@ class MainWindow(QMainWindow):
 		wfolderselection.setLayout(QHBoxLayout())
 		wfolderselection.layout().addWidget(wfolderbutton)
 		wfolderselection.layout().addWidget(self.wfolderlineedit)
-		projectnameedit=QLineEdit("ProjectName")	#TODO define focus on me TODO use default name value
-		projectnameedit.setFocus()
+		self.projectnameedit=QLineEdit("ProjectName")	#TODO define focus on me TODO use default name value
+		self.projectnameedit.setFocus()
 		hlayout.addWidget(okbutton)
 		hlayout.addWidget(cancelbutton)
 		bottomwidget=QWidget()
 		bottomwidget.setLayout(hlayout)
-		vlayout.addWidget(projectnameedit)
+		vlayout.addWidget(self.projectnameedit)
 		vlayout.addWidget(wfolderselection)
 		vlayout.addWidget(bottomwidget)
 		self.m_wapplywidget.setLayout(vlayout)
@@ -97,19 +97,41 @@ class MainWindow(QMainWindow):
 	def initMainWidget(self):
 		self.m_wmainwidget.setLayout(QVBoxLayout())
 		for p in self.projlist :
-			print(p)
 			p.UpdateUI()
 			p.projectClicked.connect(self.ApplyWidget)
 			self.m_wmainwidget.layout().addWidget(p)
 		self.m_wmainwidget.layout().addStretch(1)
 	
 	def ApplyWidget(self,p_Project):
-		print("Will apply "+p_Project.m_name)
+		self.preselectedproject=p_Project
 		self.m_stackedwidget.setCurrentIndex(1)
+	def CreateNewProject(self):
+		name=self.projectnameedit.text()
+		folder=self.wfolderlineedit.text()
+		print("process.sh"+name+folder)
+		destdir=join(folder,name)
+		#os.makedirs(destdir) # create all directories, raise an error if it already exists
+		print(self.preselectedproject.m_name)
+		print(self.preselectedproject.m_folder)
+		shutil.copytree(self.preselectedproject.m_folder, destdir)
+		os.chdir(destdir)
+		os.remove("template.desktop")
+		os.remove("template_description.txt")
+		os.remove("template_type.txt")
+		os.remove("process.sh")
+		spc=subprocess.Popen(["/bin/bash","applyname.sh",name],stdout=subprocess.PIPE)
+		out,err=spc.communicate()	#catch stdout and stderr
+		outstr=out.decode(sys.stdout.encoding)	#out is a bytstring i.e 'b'blalbal\n'  while outstr now soleley contains blablala
+		spc.wait()			#Wait until end (remove if you want parrall exec
+		if spc.returncode != 0:
+			pass #TODO prompt a Dialog file saying it could not apply the name
+		
+		#clean with bad files 
+		os.remove("applyname.sh")
+		
 	
 	def OnFolderSelectionButton(self):
 		selectedfolder=QFileDialog.getExistingDirectory(self,"Select directory where to place new project",os.path.expanduser('~'))
-		print("user selected:"+selectedfolder)
 		self.wfolderlineedit.setText(selectedfolder)
 		
 	def GoToMainView(self):
@@ -136,7 +158,7 @@ def ListAvailableProjects():
 	onlyfiles = [f for f in listdir(folder) if (isdir(join(folder, f)) and isfile(join(folder,f,"template.desktop")))]
 	for file in onlyfiles:
 		proj=ReadATemplateDesktopFile(join(folder,file,"template.desktop"))
-		proj.folder=join(folder,file)
+		proj.m_folder=join(folder,file)
 		projectlist.append(proj)
 	return projectlist
 
