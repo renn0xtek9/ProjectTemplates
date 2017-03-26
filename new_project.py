@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
 		self.m_stackedwidget=QStackedWidget(self)
 		self.m_wmainwidget=QWidget(self)
 		self.m_wapplywidget=QWidget(self)
-		exitAction = QAction(QIcon('exit.png'), '&Exit', self)        
+		exitAction = QAction(QIcon.fromTheme('application-exit'), '&Exit', self) 
 		exitAction.setShortcut('Ctrl+Q')
 		exitAction.setStatusTip('Exit application')
 		exitAction.triggered.connect(qApp.quit)
