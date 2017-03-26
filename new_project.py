@@ -4,33 +4,45 @@ from os import listdir
 from os.path import isfile, join, isdir
 import re
 
-from PyQt5.QtCore import(QSize)
+from PyQt5.QtCore import(QSize, pyqtSignal)
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QVBoxLayout,QPushButton,QWidget, QHBoxLayout,QAction,qApp, QLineEdit)
 from PyQt5.QtGui import (QIcon ,QPixmap)
 
-class Project:	
-	name=""
-	type=""
-	comment=""
-	icon=""
-	folder=""
-	projlist=list()
+class Project(QPushButton):	
+	m_name=""
+	m_type=""
+	m_comment=""
+	m_icon=""
+	m_folder=""
 	def __init__(self):
-		pass
-	def apply(self):
-		print("Will apply projects"+self.name)
+		super().__init__("Button")
+		
+	def UpdateUI(self):
+		icon=QIcon()
+		icon.addPixmap(QPixmap(self.m_icon))
+		self.setIcon(icon)
+		self.setText(self.m_name)
+		self.setToolTip(self.m_comment)
+		self.setAutoDefault(True)
+		self.clicked.connect(self.ProjectClickedEvent)
+		
+	projectClicked=pyqtSignal()
+		
+	def ProjectClickedEvent(self):
+		print("Project is clicked "+self.m_name)
+		self.projectClicked.emit()
 	
 
 class MainWindow(QMainWindow):
 
 	mainwidget=None
 	projlist=list()
-	def __init__(self,projectlist):
+	def __init__(self):
 		super().__init__()
-		self.projlist=projectlist
 		#self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-		self.initUI()		
+		self.projlist=ListAvailableProjects()
 		self.setWindowIcon(QIcon.fromTheme("applications-development"))
+		self.initUI()	
         
 	def initUI(self):     
 		exitAction = QAction(QIcon('exit.png'), '&Exit', self)        
@@ -52,15 +64,12 @@ class MainWindow(QMainWindow):
 		okbutton=QPushButton(QIcon.fromTheme("dialog-ok-apply"),"Ok")
 		cancelbutton=QPushButton(QIcon.fromTheme("dialog-cancel"),"Cancel")
 		cancelbutton.clicked.connect(self.GoToMainView)
-		
-		
 		wfolderlineedit=QLineEdit("/home/max/")
 		wfolderbutton=QPushButton(QIcon.fromTheme("document-open-folder"),"Open")
 		wfolderselection=QWidget()
 		wfolderselection.setLayout(QHBoxLayout())
 		wfolderselection.layout().addWidget(wfolderbutton)
 		wfolderselection.layout().addWidget(wfolderlineedit)
-		
 		projectnameedit=QLineEdit("ProjectName")	#TODO define focus on me
 		projectnameedit.setFocus()
 		hlayout.addWidget(okbutton)
@@ -76,16 +85,10 @@ class MainWindow(QMainWindow):
 		
 	def GoToMainView(self):
 		mainlayout=QVBoxLayout()
-		mainlayout.addStretch(1)
 		for p in self.projlist :
-			icon=QIcon()
-			icon.addPixmap(QPixmap(p.icon))
-			button=QPushButton(icon,p.name,self)
-			button.setToolTip(p.comment)
-			button.clicked.connect(p.apply)
-			button.clicked.connect(self.ApplyWidget)
-			button.setAutoDefault(True)
-			mainlayout.addWidget(button)
+			p.UpdateUI()
+			mainlayout.addWidget(p)
+		mainlayout.addStretch(1)
 		widget=QWidget()
 		widget.setLayout(mainlayout)
 		self.setCentralWidget(widget)
@@ -96,13 +99,13 @@ def ReadATemplateDesktopFile(file):
 	proj=Project()
 	for line in content:
 		if "Name=" in line:
-			proj.name=re.sub(r'Name=','',line)
+			proj.m_name=re.sub(r'Name=','',line)
 		if "Type=" in line:
-			proj.type=re.sub(r'Type=','',line)
+			proj.m_type=re.sub(r'Type=','',line)
 		if "Comment=" in line:
-			proj.comment=re.sub(r'Comment=','',line)
+			proj.m_comment=re.sub(r'Comment=','',line)
 		if "Icon=" in line:
-			proj.icon=re.sub(r'Icon=','',line)
+			proj.m_icon=re.sub(r'Icon=','',line)
 	return proj	
 
 def ListAvailableProjects():
@@ -116,7 +119,6 @@ def ListAvailableProjects():
 	return projectlist
 
 if __name__ == '__main__':
-	projectlist=ListAvailableProjects()
 	app = QApplication(sys.argv)
-	ex = MainWindow(projectlist)
+	ex = MainWindow()
 	sys.exit(app.exec_())
