@@ -8,6 +8,7 @@ from PyQt5.QtCore import(QSize, pyqtSignal)
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QVBoxLayout,QPushButton,QWidget, QHBoxLayout,QAction,qApp, QLineEdit)
 from PyQt5.QtGui import (QIcon ,QPixmap)
 
+
 class Project(QPushButton):	
 	m_name=""
 	m_type=""
@@ -26,11 +27,11 @@ class Project(QPushButton):
 		self.setAutoDefault(True)
 		self.clicked.connect(self.ProjectClickedEvent)
 		
-	projectClicked=pyqtSignal()
+	projectClicked=pyqtSignal(object)
 		
 	def ProjectClickedEvent(self):
 		print("Project is clicked "+self.m_name)
-		self.projectClicked.emit()
+		self.projectClicked.emit(self)
 	
 
 class MainWindow(QMainWindow):
@@ -58,7 +59,8 @@ class MainWindow(QMainWindow):
 		
 		self.GoToMainView()
 	
-	def ApplyWidget(self):
+	def ApplyWidget(self,p_Project):
+		print("Will apply "+p_Project.m_name)
 		vlayout=QVBoxLayout()
 		hlayout=QHBoxLayout()
 		okbutton=QPushButton(QIcon.fromTheme("dialog-ok-apply"),"Ok")
@@ -87,6 +89,7 @@ class MainWindow(QMainWindow):
 		mainlayout=QVBoxLayout()
 		for p in self.projlist :
 			p.UpdateUI()
+			p.projectClicked.connect(self.ApplyWidget)
 			mainlayout.addWidget(p)
 		mainlayout.addStretch(1)
 		widget=QWidget()
