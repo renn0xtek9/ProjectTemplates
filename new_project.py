@@ -46,19 +46,29 @@ class MainWindow(QMainWindow):
 		
 		self.GoToMainView()
 	
-	def SwitchWidget(self):
+	def ApplyWidget(self):
 		vlayout=QVBoxLayout()
 		hlayout=QHBoxLayout()
 		okbutton=QPushButton(QIcon.fromTheme("dialog-ok-apply"),"Ok")
 		cancelbutton=QPushButton(QIcon.fromTheme("dialog-cancel"),"Cancel")
 		cancelbutton.clicked.connect(self.GoToMainView)
-		projectnameedit=QLineEdit("ProjectName")
+		
+		
+		wfolderlineedit=QLineEdit("/home/max/")
+		wfolderbutton=QPushButton(QIcon.fromTheme("document-open-folder"),"Open")
+		wfolderselection=QWidget()
+		wfolderselection.setLayout(QHBoxLayout())
+		wfolderselection.layout().addWidget(wfolderbutton)
+		wfolderselection.layout().addWidget(wfolderlineedit)
+		
+		projectnameedit=QLineEdit("ProjectName")	#TODO define focus on me
 		projectnameedit.setFocus()
-		hlayout.addWidget(cancelbutton)
 		hlayout.addWidget(okbutton)
+		hlayout.addWidget(cancelbutton)
 		bottomwidget=QWidget()
 		bottomwidget.setLayout(hlayout)
 		vlayout.addWidget(projectnameedit)
+		vlayout.addWidget(wfolderselection)
 		vlayout.addWidget(bottomwidget)
 		widget=QWidget()
 		widget.setLayout(vlayout)
@@ -73,15 +83,13 @@ class MainWindow(QMainWindow):
 			button=QPushButton(icon,p.name,self)
 			button.setToolTip(p.comment)
 			button.clicked.connect(p.apply)
-			button.clicked.connect(self.SwitchWidget)
+			button.clicked.connect(self.ApplyWidget)
 			button.setAutoDefault(True)
 			mainlayout.addWidget(button)
 		widget=QWidget()
 		widget.setLayout(mainlayout)
 		self.setCentralWidget(widget)
 		
-		
-
 def ReadATemplateDesktopFile(file):
 	with open(file) as f:  #This conserve the \namenamen at en of lines
 		content = [line.rstrip('\n') for line in open(file)]	#while this approach does not	
