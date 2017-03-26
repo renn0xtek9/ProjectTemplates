@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import sys, os,subprocess
 from os import listdir
 from os.path import isfile, join, isdir
-import re
-import shutil
+import sys, os, subprocess ,re ,shutil
 from PyQt5.QtCore import(QSize, pyqtSignal)
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QVBoxLayout,QPushButton,QWidget, QHBoxLayout,QAction,qApp, QLineEdit,QFileDialog,QStackedWidget)
 from PyQt5.QtGui import (QIcon ,QPixmap)
@@ -15,6 +13,8 @@ class Project(QPushButton):
 	m_comment=""
 	m_iconurl=""
 	m_folder=""
+	m_defaultname=""
+	m_defaultpath=""
 	def __init__(self):
 		super().__init__("Button")
 		self.m_icon=QIcon()
@@ -31,13 +31,15 @@ class Project(QPushButton):
 		
 	def ProjectClickedEvent(self):
 		self.projectClicked.emit(self)
-	
+
+def RemoveFileIfExists(p_filelist):
+	for f in p_filelist:
+		if (os.path.isfile(f)):
+			os.remove(f)
 
 class MainWindow(QMainWindow):
-
 	mainwidget=None
 	projlist=list()
-	
 	m_wmainwidget=None 
 	m_wapplywidget=None
 	m_stackedwidget=None
@@ -104,32 +106,40 @@ class MainWindow(QMainWindow):
 	
 	def ApplyWidget(self,p_Project):
 		self.preselectedproject=p_Project
+		if(self.preselectedproject.m_defaultname!=""):
+			self.projectnameedit.setText(self.preselectedproject.m_defaultname)
+		if(self.preselectedproject.m_defaultpath!=""):
+			self.wfolderlineedit.setText(self.preselectedproject.m_defaultpath)
+		
 		self.m_stackedwidget.setCurrentIndex(1)
 	def CreateNewProject(self):
 		name=self.projectnameedit.text()
 		folder=self.wfolderlineedit.text()
-		print("process.sh"+name+folder)
-		destdir=join(folder,name)
-		#os.makedirs(destdir) # create all directories, raise an error if it already exists
-		print(self.preselectedproject.m_name)
-		print(self.preselectedproject.m_folder)
+		destdir=join(folder,name)	
+		print(destdir)
 		shutil.copytree(self.preselectedproject.m_folder, destdir)
 		os.chdir(destdir)
-		os.remove("template.desktop")
-		os.remove("template_description.txt")
-		os.remove("template_type.txt")
-		os.remove("process.sh")
-		spc=subprocess.Popen(["/bin/bash","applyname.sh",name],stdout=subprocess.PIPE)
-		out,err=spc.communicate()	#catch stdout and stderr
-		outstr=out.decode(sys.stdout.encoding)	#out is a bytstring i.e 'b'blalbal\n'  while outstr now soleley contains blablala
-		spc.wait()			#Wait until end (remove if you want parrall exec
-		if spc.returncode != 0:
-			pass #TODO prompt a Dialog file saying it could not apply the name
-		
-		#clean with bad files 
-		os.remove("applyname.sh")
-		
-	
+		RemoveFileIfExists(["template.desktop","template_description.txt","template_type.txt","process.sh"])
+		if (os.path.isfile("applyname.py")): #The preferred way is using applyname.py
+			spc=subprocess.Popen(["/usr/bin/python3","applyname.py",name],stdout=subprocess.PIPE)
+			out,err=spc.communicate()	#catch stdout and stderr
+			outstr=out.decode(sys.stdout.encoding)	#out is a bytstring i.e 'b'blalbal\n'  while outstr now soleley contains blablala
+			spc.wait()			#Wait until end (remove if you want parrall exec
+			if spc.returncode != 0:
+				pass #TODO prompt a Dialog file saying it could not apply the name
+		else:
+			spc=subprocess.Popen(["/bin/bash","applyname.sh",name],stdout=subprocess.PIPE)
+			out,err=spc.communicate()	#catch stdout and stderr
+			outstr=out.decode(sys.stdout.encoding)	#out is a bytstring i.e 'b'blalbal\n'  while outstr now soleley contains blablala
+			spc.wait()			#Wait until end (remove if you want parrall exec
+			if spc.returncode != 0:
+				pass #TODO prompt a Dialog file saying it could not apply the name
+		RemoveFileIfExists(["applyname.sh","applyname.py"])
+		if (os.path.isfile("template_of_applyname.py")):
+			os.rename("template_of_applyname.py","applyname.py")
+		if (os.path.isfile("template_of_template.desktop")):
+			os.rename("template_of_template.desktop","template.desktop")
+
 	def OnFolderSelectionButton(self):
 		selectedfolder=QFileDialog.getExistingDirectory(self,"Select directory where to place new project",os.path.expanduser('~'))
 		self.wfolderlineedit.setText(selectedfolder)
@@ -142,14 +152,19 @@ def ReadATemplateDesktopFile(file):
 		content = [line.rstrip('\n') for line in open(file)]	#while this approach does not	
 	proj=Project()
 	for line in content:
-		if "Name=" in line:
-			proj.m_name=re.sub(r'Name=','',line)
-		if "Type=" in line:
-			proj.m_type=re.sub(r'Type=','',line)
-		if "Comment=" in line:
-			proj.m_comment=re.sub(r'Comment=','',line)
-		if "Icon=" in line:
-			proj.m_iconurl=re.sub(r'Icon=','',line)
+		linebits=line.split("=")
+		if "Name" == linebits[0]:
+			proj.m_name=linebits[1]
+		if "Type" == linebits[0]:
+			proj.m_type=linebits[1]
+		if "Comment"== linebits[0]:
+			proj.m_comment=linebits[1]
+		if "Icon" == linebits[0]:
+			proj.m_iconurl=linebits[1]
+		if "DefaultTargetPath" == linebits[0]:
+			proj.m_defaultpath=linebits[1]
+		if "DefaultName" == linebits[0]:
+			proj.m_defaultname=linebits[1]
 	return proj	
 
 def ListAvailableProjects():
