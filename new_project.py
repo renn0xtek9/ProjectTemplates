@@ -116,17 +116,18 @@ class MainWindow(QMainWindow):
 		name=self.projectnameedit.text()
 		folder=self.wfolderlineedit.text()
 		destdir=join(folder,name)	
-		print(destdir)
 		shutil.copytree(self.preselectedproject.m_folder, destdir)
 		os.chdir(destdir)
 		RemoveFileIfExists(["template.desktop","template_description.txt","template_type.txt","process.sh"])
 		if (os.path.isfile("applyname.py")): #The preferred way is using applyname.py
 			spc=subprocess.Popen(["/usr/bin/python3","applyname.py",name],stdout=subprocess.PIPE)
+			#spc=subprocess.Popen(["./applyname.py","merde"],stdout=subprocess.PIPE,shell=True)
 			out,err=spc.communicate()	#catch stdout and stderr
 			outstr=out.decode(sys.stdout.encoding)	#out is a bytstring i.e 'b'blalbal\n'  while outstr now soleley contains blablala
 			spc.wait()			#Wait until end (remove if you want parrall exec
 			if spc.returncode != 0:
 				pass #TODO prompt a Dialog file saying it could not apply the name
+			print("we rare here")
 		else:
 			spc=subprocess.Popen(["/bin/bash","applyname.sh",name],stdout=subprocess.PIPE)
 			out,err=spc.communicate()	#catch stdout and stderr
@@ -134,7 +135,7 @@ class MainWindow(QMainWindow):
 			spc.wait()			#Wait until end (remove if you want parrall exec
 			if spc.returncode != 0:
 				pass #TODO prompt a Dialog file saying it could not apply the name
-		RemoveFileIfExists(["applyname.sh","applyname.py"])
+		RemoveFileIfExists(["applyname.sh","applyname.py","variablecatalog.txt"])
 		if (os.path.isfile("template_of_applyname.py")):
 			os.rename("template_of_applyname.py","applyname.py")
 		if (os.path.isfile("template_of_template.desktop")):
