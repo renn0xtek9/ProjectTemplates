@@ -127,7 +127,6 @@ class MainWindow(QMainWindow):
 			spc.wait()			#Wait until end (remove if you want parrall exec
 			if spc.returncode != 0:
 				pass #TODO prompt a Dialog file saying it could not apply the name
-			print("we rare here")
 		else:
 			spc=subprocess.Popen(["/bin/bash","applyname.sh",name],stdout=subprocess.PIPE)
 			out,err=spc.communicate()	#catch stdout and stderr
