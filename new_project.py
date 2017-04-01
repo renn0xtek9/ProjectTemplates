@@ -119,6 +119,7 @@ class MainWindow(QMainWindow):
 		shutil.copytree(self.preselectedproject.m_folder, destdir)
 		os.chdir(destdir)
 		RemoveFileIfExists(["template.desktop","template_description.txt","template_type.txt","process.sh"])
+		shutil.rmtree('/.git')	#This is the git repository of the template of template !
 		if (os.path.isfile("applyname.py")): #The preferred way is using applyname.py
 			spc=subprocess.Popen(["/usr/bin/python3","applyname.py",name],stdout=subprocess.PIPE)
 			#spc=subprocess.Popen(["./applyname.py","merde"],stdout=subprocess.PIPE,shell=True)
